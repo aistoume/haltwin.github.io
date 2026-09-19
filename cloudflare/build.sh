@@ -10,6 +10,10 @@ rm -rf "$OUT"; mkdir -p "$OUT"
 rsync -a --exclude '.git' --exclude '.github' --exclude '.gitignore' --exclude '.playwright-mcp' \
   --exclude 'cloudflare' --exclude 'CNAME' --exclude '*.md' --exclude '.DS_Store' "$ROOT/" "$OUT/"
 find "$OUT" -name '*.html' -exec perl -pi -e 's#https://sterlingai\.xyz#https://sterlingai.net#g' {} +
+# treasury data feed: pages rendered before the generator switched to the same-origin feed still carry the old
+# GitHub raw URL (dead since the site repo went private). Point them at the Worker-hosted feed.
+find "$OUT" -name '*.html' -exec perl -pi -e 's#https://raw\.githubusercontent\.com/HalTwin/haltwin\.github\.io/treasury-data/portfolio\.json#/treasury/portfolio.json#g' {} +
+grep -rq 'raw.githubusercontent.com/HalTwin/haltwin.github.io' "$OUT" && { echo "ERROR: old treasury data URL still referenced"; exit 1; }
 # favicon: pages generated elsewhere (treasury/ from sterling-asp's bot, lp/ from sterling-asp lp-rewards) ship without a
 # <link rel="icon">, so browsers show the default globe. Add the site icon to any page that lacks one.
 find "$OUT" -name '*.html' -print0 | while IFS= read -r -d '' f; do

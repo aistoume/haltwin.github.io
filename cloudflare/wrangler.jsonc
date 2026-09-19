@@ -13,6 +13,8 @@
   "compatibility_date": "2026-09-10",
   "workers_dev": false,
   "assets": { "directory": "./dist", "binding": "ASSETS", "run_worker_first": true },
+  // treasury data feed (see worker.js). Secret TREASURY_PUBLISH_TOKEN is set with `wrangler secret put`.
+  "kv_namespaces": [{ "binding": "TREASURY", "id": "fc84402eb7f143858f83f39cab1886c9" }],
   "routes": [
     { "pattern": "sterlingai.net", "custom_domain": true },
     { "pattern": "www.sterlingai.net", "custom_domain": true }

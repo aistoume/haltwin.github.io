@@ -1,0 +1,14 @@
+// LP rewards API on api.sterlingai.net — a zone ROUTE for /lp/* only (no custom domain, no DNS change).
+// api.sterlingai.net itself stays on the Cloudflare Tunnel (sterling-asp main backend, /mcp, /health, /v1/*);
+// Workers routes run before the tunnel origin, so only /lp/* is diverted to the LP backend on Render.
+// Deploy:  cd cloudflare/lp-api-proxy && npx wrangler@4 deploy
+{
+  "$schema": "https://unpkg.com/wrangler/config-schema.json",
+  "name": "sterling-lp-api",
+  "account_id": "f2a1cb443cfb87b526fac0886f1b34c8",
+  "main": "worker.js",
+  "compatibility_date": "2026-09-10",
+  "workers_dev": false,
+  "routes": [{ "pattern": "api.sterlingai.net/lp/*", "zone_name": "sterlingai.net" }],
+  "observability": { "enabled": true }
+}

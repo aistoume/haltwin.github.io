@@ -10,6 +10,11 @@ rm -rf "$OUT"; mkdir -p "$OUT"
 rsync -a --exclude '.git' --exclude '.github' --exclude '.gitignore' --exclude '.playwright-mcp' \
   --exclude 'cloudflare' --exclude 'CNAME' --exclude '*.md' --exclude '.DS_Store' "$ROOT/" "$OUT/"
 find "$OUT" -name '*.html' -exec perl -pi -e 's#https://sterlingai\.xyz#https://sterlingai.net#g' {} +
+# favicon: pages generated elsewhere (treasury/ from sterling-asp's bot, lp/ from sterling-asp lp-rewards) ship without a
+# <link rel="icon">, so browsers show the default globe. Add the site icon to any page that lacks one.
+find "$OUT" -name '*.html' -print0 | while IFS= read -r -d '' f; do
+  grep -q 'rel="icon"' "$f" || perl -0pi -e 's#</title>#</title>\n<link rel="icon" type="image/svg+xml" href="/favicon.svg">#' "$f"
+done
 grep -rq 'sterlingai\.xyz' "$OUT" && { echo "ERROR: sterlingai.xyz still referenced"; exit 1; }
-for f in index.html treasury/index.html favicon.svg; do [ -f "$OUT/$f" ] || { echo "ERROR: $f missing from bundle"; exit 1; }; done
+for f in index.html treasury/index.html lp/index.html lp/app.js favicon.svg; do [ -f "$OUT/$f" ] || { echo "ERROR: $f missing from bundle"; exit 1; }; done
 echo "Built $OUT:"; (cd "$OUT" && find . -type f | sort | while read -r f; do printf '  %8s  %s\n' "$(wc -c < "$f" | tr -d ' ')" "$f"; done)

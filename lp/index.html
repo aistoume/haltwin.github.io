@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>Sterling — LP Rewards</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- CSP:和官网一致的严格策略。签名用浏览器注入的 window.ethereum(不是外部脚本,不受 script-src 约束);
+     connect-src 只放行积分后端 API。上线时把 app.js 的 API 换成真实域名并同步这里的 connect-src。 -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self' https://api.sterlingai.net; img-src 'self' data:; base-uri 'none'; form-action 'none'">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&family=Silkscreen:wght@400;700&family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap">
+<style>
+  :root{
+    --paper:#FAF6EC; --paper-2:#F3EEDF; --card:#FFFDF7;
+    --ink:#111014; --ink-2:#55524A; --ink-3:#8C877A; --line:#E2DBC8;
+    --cyan:#25B8D8; --teal:#2FBFA3; --green:#55C462; --lime:#9ACB3B;
+    --amber:#D8B62B; --orange:#EE9A2F; --coral:#F26D4F; --pink:#F2439B; --mintd:#1C8A46;
+    --maxw:1080px;
+    --grad:linear-gradient(90deg,#25B8D8,#2FBFA3 16%,#55C462 32%,#9ACB3B 46%,#D8B62B 60%,#EE9A2F 72%,#F26D4F 86%,#F2439B);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:"Space Grotesk","Noto Sans SC",system-ui,sans-serif;font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px}
+  svg.spr{shape-rendering:crispEdges;flex:none}
+  .gtext{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .band15{background:linear-gradient(90deg,#25B8D8 0 6.7%,#2ABCBE 6.7% 13.4%,#2FBFA3 13.4% 20%,#42C283 20% 26.7%,#55C462 26.7% 33.4%,#78C84F 33.4% 40%,#9ACB3B 40% 46.7%,#BAC133 46.7% 53.4%,#D8B62B 53.4% 60%,#E3A82D 60% 66.7%,#EE9A2F 66.7% 73.4%,#F0843F 73.4% 80%,#F26D4F 80% 86.7%,#F25875 86.7% 93.4%,#F2439B 93.4% 100%)}
+  .scan{position:fixed;inset:0;z-index:90;pointer-events:none;opacity:.30;background:repeating-linear-gradient(0deg,rgba(17,16,20,.05) 0 1px,transparent 1px 3px)}
+
+  /* 顶栏 */
+  nav{position:sticky;top:0;z-index:60;background:color-mix(in srgb,var(--paper) 90%,transparent);backdrop-filter:blur(8px);border-bottom:3px solid #111014}
+  .nav-in{display:flex;align-items:center;gap:12px;height:64px}
+  .brand{display:flex;align-items:center;gap:11px;font-family:"Pixelify Sans",sans-serif;font-weight:700;font-size:24px;text-decoration:none;color:inherit}
+  .tag{margin-left:auto;font-family:"Silkscreen",monospace;font-size:9px;letter-spacing:.1em;color:var(--ink-2);border:2px solid #111014;background:var(--card);padding:6px 9px}
+  .wbtn{font-family:"Silkscreen",monospace;font-size:10px;border:2px solid #111014;background:#111014;color:var(--paper);padding:9px 12px;cursor:pointer;filter:drop-shadow(3px 3px 0 var(--pink))}
+  .wbtn:active{transform:translate(2px,2px);filter:drop-shadow(1px 1px 0 var(--pink))}
+  .wbtn.on{background:var(--card);color:var(--ink);filter:drop-shadow(3px 3px 0 var(--teal))}
+
+  /* hero */
+  header.hero{padding:48px 0 8px}
+  .eyebrow{font-family:"Silkscreen",monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3)}
+  h1{font-family:"Pixelify Sans",sans-serif;font-weight:700;font-size:clamp(32px,5.2vw,56px);line-height:1.03;margin:12px 0 0;letter-spacing:-.01em}
+  .lead{margin:16px 0 0;font-size:clamp(15px,1.9vw,17px);color:var(--ink-2);max-width:62ch}
+  .lead a,.lead-list a{color:var(--mintd);font-weight:600;white-space:nowrap}
+  .lead-list{margin:10px 0 0;padding-left:1.2em;font-size:clamp(15px,1.9vw,17px);color:var(--ink-2);max-width:62ch;line-height:1.55}
+  .lead-list li{margin:4px 0}
+  .lead-list li::marker{color:var(--pink)}
+  .lead-list a{color:var(--mintd);font-weight:600}
+
+  /* 活动数据条 */
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:2px;margin-top:28px;border:3px solid #111014;background:#111014;filter:drop-shadow(6px 6px 0 #111014)}
+  .stat{background:var(--card);padding:16px 18px}
+  .stat .k{font-family:"Silkscreen",monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
+  .stat .v{font-family:"Pixelify Sans",sans-serif;font-weight:700;font-size:26px;line-height:1.1;margin-top:6px}
+  .stat .s{font-family:"Space Mono",monospace;font-size:11px;color:var(--ink-2);margin-top:2px}
+
+  /* 步骤 */
+  .steps{margin-top:36px;display:flex;flex-direction:column;gap:18px}
+  .step{border:3px solid #111014;background:var(--card);filter:drop-shadow(6px 6px 0 #111014);padding:20px 22px 22px}
+  .step .cap{display:flex;align-items:center;gap:10px}
+  .step .no{font-family:"Silkscreen",monospace;font-size:10px;color:#FFFDF7;background:#111014;padding:4px 8px;letter-spacing:.1em}
+  .step .lb{font-family:"Silkscreen",monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
+  .step .bd{margin-top:12px;font-size:14.5px;color:var(--ink-2)}
+  .step.off{opacity:.5;pointer-events:none}
+  .act{margin-top:16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+  .btn{font-family:"Silkscreen",monospace;font-weight:700;font-size:12px;letter-spacing:.05em;color:#111014;border:0;padding:3px;background:#111014;cursor:pointer;filter:drop-shadow(5px 5px 0 #111014)}
+  .btn>span{display:block;padding:12px 22px;background:var(--grad)}
+  .btn:active{transform:translate(3px,3px);filter:drop-shadow(0 0 0 #111014)}
+  .btn:disabled{opacity:.5;cursor:wait}
+  .btn.dark>span{background:#111014;color:var(--paper)}
+  .addr{font-family:"Space Mono",monospace;font-size:13px;color:var(--ink);word-break:break-all}
+  .msg{font-family:"Space Mono",monospace;font-size:12.5px;color:var(--ink-2);margin-top:4px}
+  .msg.ok{color:var(--mintd)}
+  .msg.err{color:var(--coral)}
+
+  /* 我的积分卡 */
+  .mine{margin-top:14px;border:2px dashed #111014;background:var(--paper-2);padding:18px 20px;display:none}
+  .mine.show{display:block}
+  .mine .row{display:flex;justify-content:space-between;gap:10px;font-family:"Space Mono",monospace;font-size:13px;padding:5px 0}
+  .mine .row .k{color:var(--ink-3)}
+  .mine .row .v{font-weight:700}
+  .mine .big{font-family:"Pixelify Sans",sans-serif;font-weight:700;font-size:40px;line-height:1;color:var(--ink);margin-top:4px}
+  .mine .biglb{font-family:"Silkscreen",monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
+
+  /* 规则 */
+  .rules{margin-top:40px}
+  .rules h2{font-family:"Pixelify Sans",sans-serif;font-weight:700;font-size:24px;margin:0 0 16px}
+  .rgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
+  .rc{border:3px solid #111014;background:var(--card);filter:drop-shadow(5px 5px 0 #111014)}
+  .rc .top{height:8px}
+  .rc .in{padding:16px 18px 18px}
+  .rc .t{font-family:"Pixelify Sans",sans-serif;font-weight:700;font-size:18px}
+  .rc .d{margin-top:8px;font-family:"Space Mono",monospace;font-size:12.5px;line-height:1.6;color:var(--ink-2)}
+
+  footer{margin-top:52px;padding:28px 0 56px;border-top:3px solid #111014}
+  .fband{height:10px;margin-bottom:20px;width:260px}
+  .disc{font-family:"Space Mono","Noto Sans SC",monospace;font-size:10.5px;color:var(--ink-3);line-height:1.7;max-width:96ch}
+  .disc code{background:var(--card);padding:1px 5px;border:1px solid var(--line)}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="seal" viewBox="0 0 22 22"><rect x="6" y="0" width="10" height="3" fill="#111014"/><rect x="5" y="1" width="1" height="3" fill="#111014"/><rect x="16" y="1" width="1" height="3" fill="#111014"/><rect x="4" y="2" width="1" height="10" fill="#111014"/><rect x="17" y="2" width="1" height="4" fill="#111014"/><rect x="6" y="3" width="10" height="3" fill="#FFFDF7"/><rect x="5" y="4" width="1" height="8" fill="#FFFDF7"/><rect x="1" y="5" width="1" height="12" fill="#111014"/><rect x="18" y="5" width="1" height="12" fill="#F2439B"/><rect x="20" y="5" width="1" height="12" fill="#111014"/><rect x="2" y="6" width="2" height="10" fill="#25B8D8"/><rect x="6" y="6" width="2" height="6" fill="#FFFDF7"/><rect x="8" y="6" width="9" height="1" fill="#111014"/><rect x="19" y="6" width="1" height="10" fill="#F2439B"/><rect x="9" y="8" width="8" height="1" fill="#111014"/><rect x="8" y="9" width="9" height="3" fill="#FFFDF7"/><rect x="5" y="12" width="9" height="1" fill="#111014"/><rect x="14" y="12" width="3" height="5" fill="#FFFDF7"/><rect x="5" y="14" width="8" height="1" fill="#111014"/><rect x="6" y="17" width="10" height="1" fill="#FFFDF7"/><rect x="6" y="18" width="10" height="1" fill="#111014"/><rect x="6" y="20" width="10" height="2" fill="#111014"/></symbol>
+</svg>
+
+<div class="scan"></div>
+
+<nav><div class="wrap nav-in">
+  <a href="/" class="brand" title="Back to home"><svg class="spr" width="26" height="26"><use href="#seal"/></svg>Sterling</a>
+  <span class="tag">LP Rewards</span>
+  <button class="wbtn" id="wbtn">Connect Wallet</button>
+</div></nav>
+
+<header class="hero"><div class="wrap">
+  <div class="eyebrow">OKX Earn Campaign · Uniswap V2 · X Layer</div>
+  <h1>Provide LP. Earn <span class="gtext">STERLING points.</span></h1>
+  <p class="lead">One LP, two rewards. Add <b>STERLING / wNVDAx</b> liquidity on <a href="https://web3.okx.com/earn/product/uniswap-v2-x-layer-sterling-wnvdax-44110" target="_blank" rel="noopener noreferrer">OKX&nbsp;Earn&nbsp;↗</a>:</p>
+  <ul class="lead-list">
+    <li><b>From OKX:</b> <b>20,000 USDC</b> to LPs. Only positions opened from the OKX Earn page count; adding directly on Uniswap does not qualify</li>
+    <li><b>From Sterling, on top:</b> <b>100,000 STERLING points a day</b>, split by your share of enrolled LP. Any LP in the pool counts</li>
+    <li>Sign once to enroll. Sampled every ~15 min, settled hourly</li>
+    <li>No lockup, no deposit. Withdraw anytime. Runs to <b>Sep 30, 23:59 (UTC+8)</b></li>
+  </ul>
+
+  <div class="stats">
+    <div class="stat"><div class="k">OKX bonus</div><div class="v">20,000</div><div class="s">USDC</div></div>
+    <div class="stat"><div class="k">Sterling points</div><div class="v gtext">100,000</div><div class="s">per day</div></div>
+    <div class="stat"><div class="k">Your share</div><div class="v">By share</div><div class="s">of enrolled LP</div></div>
+  </div>
+</div></header>
+
+<main class="wrap">
+  <div class="steps">
+    <!-- Step 1 -->
+    <div class="step" id="s1">
+      <div class="cap"><span class="no">01</span><span class="lb">Connect your LP wallet</span></div>
+      <div class="bd">The wallet that holds your <b>STERLING / wNVDAx</b> LP on X Layer. Read-only.</div>
+      <div class="act">
+        <button class="btn dark" id="connectBtn"><span>Connect Wallet</span></button>
+        <span class="addr" id="addrOut"></span>
+      </div>
+      <div class="msg" id="s1msg"></div>
+    </div>
+
+    <!-- Step 2 -->
+    <div class="step off" id="s2">
+      <div class="cap"><span class="no">02</span><span class="lb">Sign to enroll</span></div>
+      <div class="bd">One signature, no transaction. No gas, no approvals, nothing moves. It puts this address on the points list.</div>
+      <div class="act">
+        <button class="btn" id="signBtn"><span>Sign &amp; Enroll</span></button>
+      </div>
+      <div class="msg" id="s2msg"></div>
+    </div>
+
+    <!-- Step 3 -->
+    <div class="step off" id="s3">
+      <div class="cap"><span class="no">03</span><span class="lb">Your points</span></div>
+      <div class="bd">Settled every hour, about one hour behind. No need to sign again.</div>
+      <div class="act">
+        <button class="btn dark" id="refreshBtn"><span>Refresh Points</span></button>
+      </div>
+      <div class="mine" id="mine">
+        <div class="biglb">Total LP-earned STERLING points</div>
+        <div class="big" id="ptsTotal">—</div>
+        <div style="height:12px"></div>
+        <div class="row"><span class="k">LP used for last settlement</span><span class="v" id="ptsLp">—</span></div>
+        <div class="row"><span class="k">Share of eligible enrolled LP (last settlement)</span><span class="v" id="ptsShare">—</span></div>
+        <div class="row"><span class="k">Points earned today</span><span class="v" id="ptsToday">—</span></div>
+        <div class="row"><span class="k">Enrolled since</span><span class="v" id="ptsSince">—</span></div>
+        <div class="row"><span class="k">Last settlement</span><span class="v" id="ptsSnap">—</span></div>
+      </div>
+      <div class="msg" id="s3msg"></div>
+    </div>
+  </div>
+
+  <!-- 规则 -->
+  <section class="rules">
+    <h2>How points are calculated</h2>
+    <div class="rgrid">
+      <div class="rc"><div class="top band15"></div><div class="in"><div class="t">100k a day, by share</div><div class="d">100,000 points a day, paid out hourly, split by your share of all enrolled LP.</div></div></div>
+      <div class="rc"><div class="top band15"></div><div class="in"><div class="t">Lowest sample counts</div><div class="d">Balances are sampled about every 15 minutes. Your lowest sample in the hour is what counts. Add or remove between samples and it may be missed.</div></div></div>
+      <div class="rc"><div class="top band15"></div><div class="in"><div class="t">Withdraw, stop earning</div><div class="d">LP gone at a sample, that hour pays nothing. Add it back and points resume.</div></div></div>
+      <div class="rc"><div class="top band15"></div><div class="in"><div class="t">No lockup</div><div class="d">Amount only. No boost, no lock, no deposit. Your LP stays in Uniswap.</div></div></div>
+      <div class="rc"><div class="top band15"></div><div class="in"><div class="t">Regular wallets only</div><div class="d">Multisig and smart-contract wallets can't sign here. Enroll from the wallet that holds the LP.</div></div></div>
+      <div class="rc"><div class="top band15"></div><div class="in"><div class="t">One points balance</div><div class="d">LP points and staking points are the same STERLING points. This page shows the LP side only. What points redeem for is announced separately; they are not a promise of value.</div></div></div>
+    </div>
+  </section>
+</main>
+
+<footer><div class="wrap">
+  <div class="fband band15"></div>
+  <div class="disc">
+    Sterling LP Rewards runs alongside OKX's official Earn campaign for the Uniswap&nbsp;V2 STERLING/wNVDAx pool on X&nbsp;Layer.
+    Enrollment is a signature only — Sterling is <b>non-custodial</b> and never touches your LP or funds. STERLING points are a loyalty
+    measure, not a security, financial instrument, or promise of value; eligibility may exclude restricted regions. Points are computed
+    off-chain from public on-chain LP snapshots and can be independently reconciled against your wallet's LP balance. Not investment advice.
+    Pool contract: <code id="poolTag">—</code>.
+  </div>
+</div></footer>
+
+<script src="app.js" defer></script>

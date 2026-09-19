@@ -1,0 +1,13 @@
+// api.sterlingai.net — zone ROUTE for the whole hostname (no custom domain, no DNS change: the hostname already has a
+// proxied record, and Workers routes run before whatever origin that record points at).
+// Deploy:  cd cloudflare/api-proxy && npx wrangler@4 deploy
+{
+  "$schema": "https://unpkg.com/wrangler/config-schema.json",
+  "name": "sterling-api-proxy",
+  "account_id": "f2a1cb443cfb87b526fac0886f1b34c8",
+  "main": "worker.js",
+  "compatibility_date": "2026-09-10",
+  "workers_dev": false,
+  "routes": [{ "pattern": "api.sterlingai.net/*", "zone_name": "sterlingai.net" }],
+  "observability": { "enabled": true }
+}
